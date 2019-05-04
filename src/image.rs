@@ -1,3 +1,6 @@
+use crate::sdl2::render::{Texture, UpdateTextureError};
+
+
 /// Represents a Color in RGBA format
 /// 
 /// Each component ranges from 0 to 255, with 0 representing no color
@@ -30,9 +33,9 @@ pub struct Image {
     // which is one of the more common uses of this type.
     data: Vec<u8>,
     // How many pixels are in a row of the image
-    width: usize,
+    pub width: usize,
     // How many rows of pixels there are
-    height: usize
+    pub height: usize
 }
 
 impl Image {
@@ -54,7 +57,7 @@ impl Image {
     /// This function doesn't check whether or not the pixel is in the
     /// bounds of the image.
     pub fn read(&self, x: usize, y: usize) -> RGBA {
-        let i = self.width * y + x;
+        let i = RGBA_BYTES * (self.width * y + x);
         let r = self.data[i];
         let g = self.data[i + 1];
         let b = self.data[i + 2];
@@ -67,25 +70,30 @@ impl Image {
     /// This function doesn't check whether or not the pixel is in the bounds
     /// of the image.
     pub fn write(&mut self, x: usize, y: usize, pixel: RGBA) {
-        let i = self.width * y + x;
+        let i = RGBA_BYTES * (self.width * y + x);
         self.data[i] = pixel.r;
         self.data[i + 1] = pixel.g;
         self.data[i + 2] = pixel.b;
         self.data[i + 3] = pixel.a;
     }
+
+    /// Fill a texture with the pixels in this image
+    pub fn fill(&self, texture: &mut Texture) -> Result<(), UpdateTextureError> {
+        texture.update(None, &self.data, RGBA_BYTES * self.width)
+    }
 }
 
 
 mod test {
-    use super::{Image, RGBA};
+    use super::*;
 
     #[test]
     fn test_image() {
         let mut image = Image::new(4, 4);
         let red = RGBA::new(0xFF, 0, 0, 0xFF);
         image.write(0, 0, red);
-        image.write(2, 2, red);
+        image.write(1, 0, red);
         assert_eq!(image.read(0, 0), red);
-        assert_eq!(image.read(2, 2), red);
+        assert_eq!(image.read(1, 0), red);
     }
 }

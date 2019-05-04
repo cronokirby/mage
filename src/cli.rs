@@ -1,5 +1,6 @@
 use crate::structopt::StructOpt;
 use crate::display::display;
+use crate::image::{Image, RGBA};
 
 
 #[derive(Debug, StructOpt)]
@@ -27,8 +28,18 @@ impl Opt {
     /// the right sub-programs
     pub fn dispatch(self) {
         match self {
-            Opt::Show{..} => display(),
+            Opt::Show{..} => show(),
             Opt::Convert{..} => println!("convert")
         }
     }
+}
+
+fn show() {
+    let mut image = Image::new(255, 200);
+    for x in 0..255 {
+        for y in 0..200 {
+            image.write(x, y, RGBA::new(0xFF, x as u8, y as u8, 0xFF));
+        }
+    }
+    display(image);
 }

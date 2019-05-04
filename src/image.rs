@@ -4,7 +4,7 @@
 /// at all in that component, and 255 representing the most color possible.
 /// With the alpha component, however, 0 represents complete transparency,
 /// and 255 represents
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RGBA {
     pub r: u8,
     pub g: u8,
@@ -72,5 +72,20 @@ impl Image {
         self.data[i + 1] = pixel.g;
         self.data[i + 2] = pixel.b;
         self.data[i + 3] = pixel.a;
+    }
+}
+
+
+mod test {
+    use super::{Image, RGBA};
+
+    #[test]
+    fn test_image() {
+        let mut image = Image::new(4, 4);
+        let red = RGBA::new(0xFF, 0, 0, 0xFF);
+        image.write(0, 0, red);
+        image.write(2, 2, red);
+        assert_eq!(image.read(0, 0), red);
+        assert_eq!(image.read(2, 2), red);
     }
 }

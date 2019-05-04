@@ -1,4 +1,5 @@
 use crate::structopt::StructOpt;
+use crate::display::display;
 
 
 #[derive(Debug, StructOpt)]
@@ -25,6 +26,9 @@ impl Opt {
     /// Handle all cases of the command line options, running
     /// the right sub-programs
     pub fn dispatch(self) {
-        println!("{:?}", self);
+        match self {
+            Opt::Show{..} => display(),
+            Opt::Convert{..} => println!("convert")
+        }
     }
 }

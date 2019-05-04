@@ -1,3 +1,10 @@
+extern crate structopt;
+use structopt::StructOpt;
+
+mod cli;
+
+
 fn main() {
-    println!("Hello, world!");
+    let opt = cli::Opt::from_args();
+    opt.dispatch();
 }

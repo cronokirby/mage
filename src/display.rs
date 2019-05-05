@@ -1,16 +1,15 @@
 use std::thread;
 use std::time::Duration;
 
-use crate::sdl2::pixels::{Color, PixelFormatEnum};
 use crate::sdl2::event::{Event, WindowEvent};
 use crate::sdl2::keyboard::Keycode;
+use crate::sdl2::pixels::{Color, PixelFormatEnum};
 use crate::sdl2::rect::Rect;
 
 use crate::image::Image;
 
-
 /// Holds the information in a display
-/// 
+///
 /// This struct allows us to move event handling logic to methods,
 /// and then check the state of the display after these methods,
 /// in order to control flow.
@@ -18,23 +17,31 @@ struct Display {
     image: Image,
     width: u32,
     height: u32,
-    should_end: bool
+    should_end: bool,
 }
 
 impl Display {
     fn new(image: Image) -> Display {
         let width = image.width as u32;
         let height = image.height as u32;
-        Display { image, width, height, should_end: false }
+        Display {
+            image,
+            width,
+            height,
+            should_end: false,
+        }
     }
 
     fn handle(&mut self, event: Event) {
         match event {
-            Event::Quit {..} |
-            Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+            Event::Quit { .. }
+            | Event::KeyDown {
+                keycode: Some(Keycode::Escape),
+                ..
+            } => {
                 self.should_end = true;
-            },
-            Event::Window{win_event, ..} => {
+            }
+            Event::Window { win_event, .. } => {
                 self.handle_window(win_event);
             }
             _ => {}
@@ -54,7 +61,8 @@ impl Display {
     fn run(&mut self) {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
-        let window = video_subsystem.window("mage", self.width, self.height)
+        let window = video_subsystem
+            .window("mage", self.width, self.height)
             .resizable()
             .position_centered()
             .build()
@@ -65,11 +73,9 @@ impl Display {
         canvas.present();
 
         let creator = canvas.texture_creator();
-        let mut texture = creator.create_texture_static(
-            Some(PixelFormatEnum::RGBA8888),
-            self.width,
-            self.height
-        ).unwrap();
+        let mut texture = creator
+            .create_texture_static(Some(PixelFormatEnum::RGBA8888), self.width, self.height)
+            .unwrap();
         self.image.fill(&mut texture).unwrap();
         canvas.copy(&texture, None, None).unwrap();
 

@@ -1,7 +1,6 @@
-use crate::structopt::StructOpt;
 use crate::display::display;
 use crate::image::{Image, RGBA};
-
+use crate::structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "mage")]
@@ -10,7 +9,7 @@ pub enum Opt {
     /// Show the image in a file
     Show {
         /// The input file to show
-        input: String
+        input: String,
     },
     #[structopt(name = "convert")]
     /// Convert an image from one format to another
@@ -19,8 +18,8 @@ pub enum Opt {
         input: String,
         #[structopt(short = "o")]
         /// The output file for the image
-        output: String
-    }
+        output: String,
+    },
 }
 
 impl Opt {
@@ -28,8 +27,8 @@ impl Opt {
     /// the right sub-programs
     pub fn dispatch(self) {
         match self {
-            Opt::Show{..} => show(),
-            Opt::Convert{..} => println!("convert")
+            Opt::Show { .. } => show(),
+            Opt::Convert { .. } => println!("convert"),
         }
     }
 }

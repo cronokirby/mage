@@ -83,7 +83,7 @@ impl Image {
     }
 }
 
-
+#[cfg(test)]
 mod test {
     use super::*;
 

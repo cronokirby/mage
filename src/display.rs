@@ -74,12 +74,12 @@ impl Display {
         canvas.copy(&texture, None, None).unwrap();
 
         let mut event_pump = sdl_context.event_pump().unwrap();
-        while (!self.should_end) {
+        while !self.should_end {
             for event in event_pump.poll_iter() {
                 self.handle(event);
             }
             let dest = Rect::new(0, 0, self.width, self.height);
-            canvas.copy(&texture, None, dest);
+            canvas.copy(&texture, None, dest).unwrap();
             canvas.present();
             thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
         }

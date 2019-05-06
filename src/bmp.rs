@@ -1,5 +1,5 @@
 use std::io;
-use crate::image::Image;
+use crate::image::{Image, RGBA_BYTES};
 // The structures and parsing in this module are mainly based off of the
 // following: http://www.dragonwins.com/domains/GetTechEd/bmp/bmpfileformat.htm
 
@@ -10,6 +10,20 @@ use crate::image::Image;
 fn u32_le(data: &[u8]) -> u32 {
     (data[0] as u32) | ((data[1] as u32) << 8) | ((data[2] as u32) << 16) | ((data[3] as u32) << 24)
 }
+
+fn write_u32_le<W: io::Write>(writer: &mut W, num: u32) -> io::Result<()> {
+    let mut buf = [0; 4];
+    buf[0] = num as u8;
+    buf[1] = (num >> 8) as u8;
+    buf[2] = (num >> 16) as u8;
+    buf[3] = (num >> 24) as u8;
+    writer.write_all(&buf)
+}
+
+fn write_u16_le<W: io::Write>(writer: &mut W, num: u16) -> io::Result<()> {
+    writer.write_all(&[num as u8, (num >> 8) as u8])
+}
+
 
 /// Represents the errors we can encounter when reading a bmp file
 pub enum BMPError {
@@ -52,6 +66,8 @@ struct ImageHeader {
     bit_count: u16,
     /// What type of compression is used
     compression: CompressionType,
+    /// How many bytes are dedicated to the image data
+    image_bytes: u32,
     /// How many x pixels per meter
     x_pixels_per_meter: u32,
     /// How many y pixels per meter
@@ -73,6 +89,18 @@ enum CompressionType {
     Bitfields,
     /// We use this to capture any unknown compression type
     Unknown,
+}
+
+impl Into<u32> for CompressionType {
+    fn into(self) -> u32 {
+        match self {
+            CompressionType::Uncompressed => 0,
+            CompressionType::RLE8 => 1,
+            CompressionType::RLE4 => 2,
+            CompressionType::Bitfields => 3,
+            CompressionType::Unknown => 69
+        }
+    }
 }
 
 /// This contains a mask for each color component of a 32 bit pixel
@@ -107,6 +135,32 @@ fn parse_file_header(data: &[u8]) -> BMPResult<FileHeader> {
 }
 
 
-fn write_image<W: io::Write>(writer: &mut W, image: &Image) -> io::Result<()> {
-    Ok(())
+fn write_file_header<W: io::Write>(writer: &mut W, header: &FileHeader) -> io::Result<()> {
+    writer.write_all(&[66, 77])?;
+    write_u32_le(writer, header.size)?;
+    writer.write_all(&[0, 0, 0, 0])?;
+    write_u32_le(writer, header.offset)
+}
+
+fn write_image_header<W: io::Write>(writer: &mut W, header: &ImageHeader) -> io::Result<()> {
+    write_u32_le(writer, header.size)?;
+    write_u32_le(writer, header.width)?;
+    write_u32_le(writer, header.height)?;
+    writer.write_all(&[1, 0])?;
+    write_u16_le(writer, header.bit_count)?;
+    write_u32_le(writer, header.compression.into())?;
+    write_u32_le(writer, header.image_bytes)?;
+    write_u32_le(writer, header.x_pixels_per_meter)?;
+    write_u32_le(writer, header.y_pixels_per_meter)?;
+    write_u32_le(writer, header.color_used)?;
+    write_u32_le(writer, header.color_important)
+}
+
+pub fn write_image<W: io::Write>(writer: &mut W, image: &Image) -> io::Result<()> {
+    let pixel_count = image.width * image.height;
+    let file_header = FileHeader {
+        size: 122 + (RGBA_BYTES * pixel_count) as u32,
+        offset: 122
+    };
+    write_file_header(writer, &file_header)
 }

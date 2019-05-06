@@ -21,7 +21,7 @@ impl RGBA {
     }
 }
 
-const RGBA_BYTES: usize = 4;
+pub const RGBA_BYTES: usize = 4;
 
 pub struct Image {
     // The raw data stored with 4 bytes per color.

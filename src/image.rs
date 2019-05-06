@@ -85,6 +85,48 @@ impl Image {
     }
 }
 
+/// Represents an iterator over the pixels of an image
+pub struct ImageIterator<'a> {
+    image: &'a Image,
+    index: usize,
+}
+
+impl <'a> ImageIterator<'a> {
+    fn new(image: &'a Image) -> Self {
+        ImageIterator { image, index: 0 }
+    }
+}
+
+impl <'a> Iterator for ImageIterator<'a> {
+    type Item = RGBA;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next_index = self.index + 4;
+        if next_index > self.image.data.len() {
+            return None;
+        }
+        let r = self.image.data[self.index];
+        self.index += 1;
+        let g = self.image.data[self.index];
+        self.index += 1;
+        let b = self.image.data[self.index];
+        self.index += 1;
+        let a = self.image.data[self.index];
+        self.index += 1;
+        Some(RGBA { r, g, b, a })
+    }
+}
+
+impl <'a> IntoIterator for &'a Image {
+    type Item = RGBA;
+    type IntoIter = ImageIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ImageIterator::new(self)
+    }
+}
+
+
 #[cfg(test)]
 mod test {
     use super::*;

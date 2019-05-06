@@ -1,3 +1,5 @@
+use std::io;
+use crate::image::Image;
 // The structures and parsing in this module are mainly based off of the
 // following: http://www.dragonwins.com/domains/GetTechEd/bmp/bmpfileformat.htm
 
@@ -102,4 +104,9 @@ fn parse_file_header(data: &[u8]) -> BMPResult<FileHeader> {
     }
     let offset = u32_le(&data[10..]);
     Ok(FileHeader { size, offset })
+}
+
+
+fn write_image<W: io::Write>(writer: &mut W, image: &Image) -> io::Result<()> {
+    Ok(())
 }

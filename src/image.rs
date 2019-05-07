@@ -91,13 +91,13 @@ pub struct ImageIterator<'a> {
     index: usize,
 }
 
-impl <'a> ImageIterator<'a> {
+impl<'a> ImageIterator<'a> {
     fn new(image: &'a Image) -> Self {
         ImageIterator { image, index: 0 }
     }
 }
 
-impl <'a> Iterator for ImageIterator<'a> {
+impl<'a> Iterator for ImageIterator<'a> {
     type Item = RGBA;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -117,7 +117,7 @@ impl <'a> Iterator for ImageIterator<'a> {
     }
 }
 
-impl <'a> IntoIterator for &'a Image {
+impl<'a> IntoIterator for &'a Image {
     type Item = RGBA;
     type IntoIter = ImageIterator<'a>;
 
@@ -125,7 +125,6 @@ impl <'a> IntoIterator for &'a Image {
         ImageIterator::new(self)
     }
 }
-
 
 #[cfg(test)]
 mod test {

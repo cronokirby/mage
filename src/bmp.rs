@@ -214,8 +214,8 @@ fn write_format<W: io::Write>(writer: &mut W, format: ColorFormat) -> io::Result
     write_u32_le(writer, mask.g)?;
     write_u32_le(writer, mask.b)?;
     write_u32_le(writer, mask.a)?;
-    write_u32_le(writer, 0x73524742)?;
-    writer.write_all(&[0; 16])
+    write_u32_le(writer, 0x57696E20)?;
+    writer.write_all(&[0; 48])
 }
 
 pub fn write_image<W: io::Write>(writer: &mut W, image: &Image) -> io::Result<()> {
@@ -240,7 +240,7 @@ pub fn write_image<W: io::Write>(writer: &mut W, image: &Image) -> io::Result<()
     write_image_header(writer, &image_header)?;
     write_format(writer, ColorFormat::RGBA)?;
     for pixel in image {
-        writer.write_all(&[pixel.r, pixel.g, pixel.b, pixel.a])?;
+        writer.write_all(&[pixel.a, pixel.b, pixel.g, pixel.r])?;
     }
     Ok(())
 }

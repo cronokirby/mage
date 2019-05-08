@@ -4,6 +4,7 @@ use crate::image::{Image, RGBA};
 use crate::structopt::StructOpt;
 use std::fs::File;
 use std::io;
+use std::io::Read;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "mage")]
@@ -30,7 +31,7 @@ impl Opt {
     /// the right sub-programs
     pub fn dispatch(self) -> io::Result<()> {
         match self {
-            Opt::Show { .. } => show(),
+            Opt::Show { input } => show(input),
             Opt::Convert { .. } => {
                 let image = make_image();
                 let file = File::create("foo.bmp")?;
@@ -41,8 +42,17 @@ impl Opt {
     }
 }
 
-fn show() -> io::Result<()> {
-    let image = make_image();
+fn show(input: String) -> io::Result<()> {
+    let mut f = File::open(input)?;
+    let mut buffer = Vec::new();
+    f.read_to_end(&mut buffer)?;
+    let image = match bmp::parse_image(&buffer) {
+        Ok(img) => img,
+        Err(e) => {
+            println!("Failed to parse image: {:?}", e);
+            return Ok(())
+        }
+    };
     display(image);
     Ok(())
 }

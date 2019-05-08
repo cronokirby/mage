@@ -1,4 +1,4 @@
-use crate::image::{Image, RGBA_BYTES};
+use crate::image::{Image, RGBA_BYTES, RGBA};
 use std::convert::TryFrom;
 use std::io;
 // The structures and parsing in this module are mainly based off of the
@@ -43,6 +43,7 @@ fn write_u16_le<W: io::Write>(writer: &mut W, num: u16) -> io::Result<()> {
 }
 
 /// Represents the errors we can encounter when reading a bmp file
+#[derive(Debug)]
 pub enum BMPError {
     /// The format of the file doesn't match the specification
     InvalidFormat(String),
@@ -64,6 +65,7 @@ fn unsupported_format<T, S: Into<String>>(s: S) -> BMPResult<T> {
 }
 
 /// This contains the data in the file header for BMP
+#[derive(Debug)]
 struct FileHeader {
     /// How big this file is (including this header)
     size: u32,
@@ -72,6 +74,7 @@ struct FileHeader {
 }
 
 /// This contains information about the image
+#[derive(Debug)]
 struct ImageHeader {
     /// How large this header is
     size: u32,
@@ -97,7 +100,7 @@ struct ImageHeader {
     color_important: u32,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum CompressionType {
     /// No compression at all
     Uncompressed,
@@ -148,7 +151,7 @@ struct ColorMasks {
 }
 
 /// This contains the color formats that we can handle.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum ColorFormat {
     RGBA,
 }
@@ -181,6 +184,7 @@ impl From<ColorFormat> for ColorMasks {
 }
 
 /// This holds all the header information for a bitmap image
+#[derive(Debug)]
 struct Header {
     file_header: FileHeader,
     image_header: ImageHeader,
@@ -245,6 +249,57 @@ fn parse_color_format(data: &[u8]) -> BMPResult<ColorFormat> {
     let b = u32_le(&data[8..]);
     let a = u32_le(&data[12..]);
     ColorFormat::try_from(ColorMasks { r, g, b, a })
+}
+
+fn parse_header(data: &[u8]) -> BMPResult<Header> {
+    let file_header = parse_file_header(data)?;
+    if data.len() < file_header.offset as usize {
+        return invalid_format("insufficient header length");
+    }
+    let image_header = parse_image_header(&data[14..])?;
+    if image_header.compression != CompressionType::Bitfields {
+        return unsupported_format("compression type not supported");
+    }
+    if image_header.bit_count != 32 {
+        return unsupported_format("unspported pixel format");
+    }
+    let format = parse_color_format(&data[54..])?;
+    Ok(Header {
+        file_header,
+        image_header,
+        format,
+    })
+}
+
+pub fn parse_image(data: &[u8]) -> BMPResult<Image> {
+    let header = parse_header(data)?;
+    if data.len() < header.file_header.size as usize {
+        return invalid_format("insufficient image data");
+    }
+    let height = header.image_header.height.abs() as u32;
+    let image_data = &data[header.file_header.offset as usize..];
+    let mut image = Image::new(header.image_header.width, height);
+    let mut i = 0;
+    let mut x = 0;
+    let mut y = 0;
+    while i < header.image_header.image_bytes as usize {
+        let r = image_data[i] as u8;
+        i += 1;
+        let g = image_data[i] as u8;
+        i += 1;
+        let b = image_data[i] as u8;
+        i += 1;
+        let a = image_data[i] as u8;
+        i += 1;
+        let color = RGBA::new(r, g, b, a);
+        image.write(x, y, color);
+        x += 1;
+        if x >= image.width {
+            x = 0;
+            y += 1;
+        }
+    }
+    Ok(image)
 }
 
 fn write_file_header<W: io::Write>(writer: &mut W, header: &FileHeader) -> io::Result<()> {

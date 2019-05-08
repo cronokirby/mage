@@ -76,7 +76,7 @@ impl Image {
     ///
     /// This function doesn't check whether or not the pixel is in the bounds
     /// of the image.
-    pub fn write(&mut self, x: usize, y: usize, pixel: RGBA) {
+    pub fn write(&mut self, x: u32, y: u32, pixel: RGBA) {
         let i = RGBA_BYTES * (self.row_width * (y as usize) + (x as usize));
         self.data[i] = pixel.r;
         self.data[i + 1] = pixel.g;

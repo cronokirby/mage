@@ -174,7 +174,7 @@ struct Header {
 // This assumes we're parsing the header from the start of the slice
 fn parse_file_header(data: &[u8]) -> BMPResult<FileHeader> {
     if data.len() < 14 {
-        return invalid_format("insufficient length");
+        return invalid_format("insufficient file header length");
     }
     if data[0] != 66 || data[1] != 77 {
         return invalid_format("header didn't start with 'BM'");
@@ -185,6 +185,17 @@ fn parse_file_header(data: &[u8]) -> BMPResult<FileHeader> {
     }
     let offset = u32_le(&data[10..]);
     Ok(FileHeader { size, offset })
+}
+
+// This assumes we're parsing the header from the start of the slice
+fn parse_image_header(data: &[u8]) -> BMPResult<ImageHeader> {
+    if data.len() < 44 {
+        return invalid_format("insufficient image header length")
+    }
+    let size = u32_le(data);
+    let width = u32_le(&data[4..]);
+    let height = u32_le(&data[8..]) as i32;
+    unimplemented!()
 }
 
 fn write_file_header<W: io::Write>(writer: &mut W, header: &FileHeader) -> io::Result<()> {
@@ -221,7 +232,7 @@ fn write_format<W: io::Write>(writer: &mut W, format: ColorFormat) -> io::Result
 pub fn write_image<W: io::Write>(writer: &mut W, image: &Image) -> io::Result<()> {
     let pixel_count = image.width * image.height;
     let file_header = FileHeader {
-        size: 122 + (RGBA_BYTES * pixel_count) as u32,
+        size: 122 + (RGBA_BYTES as u32 * pixel_count),
         offset: 122,
     };
     let image_header = ImageHeader {

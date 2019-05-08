@@ -30,27 +30,32 @@ pub struct Image {
     // it's the preferred format for passing to renderers like SDL,
     // which is one of the more common uses of this type.
     data: Vec<u8>,
-    // How many pixels are in a row of the image
-    pub width: usize,
-    // How many rows of pixels there are
-    pub height: usize,
+    // How many pixels are in a row
+    row_width: usize,
+    /// How many pixels are in a row of the image
+    pub width: u32,
+    /// How many rows of pixels there are
+    pub height: u32,
 }
 
 impl Image {
     /// Construct a new image of certain dimensions
     ///
     /// The image will be completely filled with black, transparent pixels.
-    pub fn new(width: usize, height: usize) -> Image {
-        let data = vec![0; RGBA_BYTES * width * height];
+    pub fn new(width: u32, height: u32) -> Image {
+        let row_width = width as usize;
+        let row_height = height as usize;
+        let data = vec![0; RGBA_BYTES * row_width * row_height];
         Image {
             data,
+            row_width,
             width,
             height,
         }
     }
 
     /// Check whether or not x and y are in the bounds of this image
-    pub fn in_bounds(&self, x: usize, y: usize) -> bool {
+    pub fn in_bounds(&self, x: u32, y: u32) -> bool {
         x < self.width && y < self.height
     }
 
@@ -58,8 +63,8 @@ impl Image {
     ///
     /// This function doesn't check whether or not the pixel is in the
     /// bounds of the image.
-    pub fn read(&self, x: usize, y: usize) -> RGBA {
-        let i = RGBA_BYTES * (self.width * y + x);
+    pub fn read(&self, x: u32, y: u32) -> RGBA {
+        let i = RGBA_BYTES * (self.row_width * (y as usize) + (x as usize));
         let r = self.data[i];
         let g = self.data[i + 1];
         let b = self.data[i + 2];
@@ -72,7 +77,7 @@ impl Image {
     /// This function doesn't check whether or not the pixel is in the bounds
     /// of the image.
     pub fn write(&mut self, x: usize, y: usize, pixel: RGBA) {
-        let i = RGBA_BYTES * (self.width * y + x);
+        let i = RGBA_BYTES * (self.row_width * (y as usize) + (x as usize));
         self.data[i] = pixel.r;
         self.data[i + 1] = pixel.g;
         self.data[i + 2] = pixel.b;
@@ -81,7 +86,7 @@ impl Image {
 
     /// Fill a texture with the pixels in this image
     pub fn fill(&self, texture: &mut Texture) -> Result<(), UpdateTextureError> {
-        texture.update(None, &self.data, RGBA_BYTES * self.width)
+        texture.update(None, &self.data, RGBA_BYTES * self.row_width)
     }
 }
 

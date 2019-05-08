@@ -34,6 +34,10 @@ fn write_i32_le<W: io::Write>(writer: &mut W, num: i32) -> io::Result<()> {
     writer.write_all(&buf)
 }
 
+fn u16_le(data: &[u8]) -> u16 {
+    (data[0] as u16) | ((data[1] as u16) << 8)
+}
+
 fn write_u16_le<W: io::Write>(writer: &mut W, num: u16) -> io::Result<()> {
     writer.write_all(&[num as u8, (num >> 8) as u8])
 }
@@ -119,6 +123,18 @@ impl From<CompressionType> for u32 {
     }
 }
 
+impl From<u32> for CompressionType {
+    fn from(num: u32) -> Self {
+        match num {
+            0 => CompressionType::Uncompressed,
+            1 => CompressionType::RLE8,
+            2 => CompressionType::RLE4,
+            3 => CompressionType::Bitfields,
+            _ => CompressionType::Unknown,
+        }
+    }
+}
+
 /// This holds the color masks representing a given color format
 ///
 /// The BMP format uses these color masks to represent different color
@@ -189,13 +205,34 @@ fn parse_file_header(data: &[u8]) -> BMPResult<FileHeader> {
 
 // This assumes we're parsing the header from the start of the slice
 fn parse_image_header(data: &[u8]) -> BMPResult<ImageHeader> {
-    if data.len() < 44 {
-        return invalid_format("insufficient image header length")
+    if data.len() < 40 {
+        return invalid_format("insufficient image header length");
     }
     let size = u32_le(data);
     let width = u32_le(&data[4..]);
     let height = u32_le(&data[8..]) as i32;
-    unimplemented!()
+    if data[12] != 1 || data[13] != 0 {
+        return invalid_format("plane count not 1");
+    }
+    let bit_count = u16_le(&data[14..]);
+    let compression = CompressionType::from(u32_le(&data[16..]));
+    let image_bytes = u32_le(&data[20..]);
+    let x_pixels_per_meter = u32_le(&data[24..]);
+    let y_pixels_per_meter = u32_le(&data[28..]);
+    let color_used = u32_le(&data[32..]);
+    let color_important = u32_le(&data[36..]);
+    Ok(ImageHeader {
+        size,
+        width,
+        height,
+        bit_count,
+        compression,
+        image_bytes,
+        x_pixels_per_meter,
+        y_pixels_per_meter,
+        color_used,
+        color_important,
+    })
 }
 
 fn write_file_header<W: io::Write>(writer: &mut W, header: &FileHeader) -> io::Result<()> {

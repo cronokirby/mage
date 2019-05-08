@@ -214,7 +214,7 @@ fn parse_image_header(data: &[u8]) -> BMPResult<ImageHeader> {
     }
     let size = u32_le(data);
     let width = u32_le(&data[4..]);
-    let height = u32_le(&data[8..]) as i32;
+    let height = i32_le(&data[8..]);
     if data[12] != 1 || data[13] != 0 {
         return invalid_format("plane count not 1");
     }

@@ -235,6 +235,18 @@ fn parse_image_header(data: &[u8]) -> BMPResult<ImageHeader> {
     })
 }
 
+// This assumes we're reading from the start of the slice
+fn parse_color_format(data: &[u8]) -> BMPResult<ColorFormat> {
+    if data.len() < 16 {
+        return invalid_format("insufficient color mask length");
+    }
+    let r = u32_le(data);
+    let g = u32_le(&data[4..]);
+    let b = u32_le(&data[8..]);
+    let a = u32_le(&data[12..]);
+    ColorFormat::try_from(ColorMasks { r, g, b, a })
+}
+
 fn write_file_header<W: io::Write>(writer: &mut W, header: &FileHeader) -> io::Result<()> {
     writer.write_all(&[66, 77])?;
     write_u32_le(writer, header.size)?;
